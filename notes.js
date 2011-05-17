@@ -1,9 +1,9 @@
 Note = {
   Box: {
     create: function(id) {
-      var $black_border = $('<div></div>');
-      $black_border.addClass("note-box-black-border");
-      $black_border.css({opacity: 0.7});
+      var $inner_border = $('<div></div>');
+      $inner_border.addClass("note-box-inner-border");
+      $inner_border.css({opacity: 0.7});
 
       var $note_box = $('<div></div>');
       $note_box.addClass("note-box");
@@ -12,10 +12,9 @@ Note = {
       $note_box.draggable({containment: "parent"});
       $note_box.resizable({
         containment: "parent", 
-        handles: "se",
-        alsoResize: ".note-box-black-border"
+        handles: "se"
       });
-      $note_box.append($black_border);
+      $note_box.append($inner_border);
       Note.Box.bind_events($note_box);
 
       return $note_box;
@@ -31,12 +30,19 @@ Note = {
           Note.Body.hide_all();
         }
       )
+      
+      $note_box.bind(
+        "resize",
+        function(e) {
+          var $note_box_inner = $(e.currentTarget);
+          Note.Box.resize_inner_border($note_box_inner);
+        }
+      );
 
       $note_box.bind(
         "dragstop resizestop",
         function(e) {
           Note.dragging = false;
-          var $note_box_inner = $(e.currentTarget);
         }
       );
 
@@ -57,9 +63,9 @@ Note = {
       );
     },
     
-    resize_black_border: function($note_box) {
-      var $black_border = $note_box.find("div.note-box-black-border");
-      $black_border.css({
+    resize_inner_border: function($note_box) {
+      var $inner_border = $note_box.find("div.note-box-inner-border");
+      $inner_border.css({
         height: $note_box.height() - 2, 
         width: $note_box.width() - 2
       });
@@ -176,7 +182,10 @@ Note = {
         width: "100%",
         height: "10em"
       });
-      $textarea.val($note_body.html());
+      
+      if ($note_body.html() !== "<em>Click to edit</em>") {
+        $textarea.val($note_body.html());
+      }
 
       $dialog = $('<div></div>');
       $dialog.append($textarea);
@@ -206,9 +215,11 @@ Note = {
       var $textarea = $this.find("textarea");
       var id = $this.data("id");
       var $note_body = $("#note-container .note-body[data-id=" + id + "]");
+      var $note_box = $("#note-container .note-box[data-id=" + id + "]");
       var text = $textarea.val();
       Note.Body.set_text($note_body, text);
       $this.dialog("close");
+      $note_box.find(".note-box-inner-border").removeClass("unsaved");
       console.log("save %d", id);
     },
     
@@ -252,16 +263,18 @@ Note = {
     
     $("div#note-container").append($note_box);
     $("div#note-container").append($note_body);
-    Note.Box.resize_black_border($note_box);
+    Note.Box.resize_inner_border($note_box);
     Note.Body.set_text($note_body, text);
   },
   
   new: function() {
     var $note_box = Note.Box.create(Note.id);
     var $note_body = Note.Body.create(Note.id);
+    $note_box.find(".note-box-inner-border").addClass("unsaved");
+    $note_body.html("<em>Click to edit</em>");
     $("div#note-container").append($note_box);
     $("div#note-container").append($note_body);
-    Note.Box.resize_black_border($note_box);
+    Note.Box.resize_inner_border($note_box);
     Note.id += "x";
   },
   
@@ -276,13 +289,7 @@ Note = {
 
 $(document).ready(function() {
   $("#translate-button").click(function() {
-    if (Note.id === "x") {
-      // Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum");
-      Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
-    } else {
-      Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
-    }
-    Note.id += "x";
+    Note.new();
   });
   $("#note-container").width($("#image").width());
   $("#note-container").height($("#image").height());
