@@ -83,6 +83,17 @@ Note = {
         top: $note_box.position().top + $note_box.height() + 5,
         left: $note_box.position().left
       });
+      Note.Body.bound_position($note_body);
+    },
+    
+    bound_position: function($note_body) {
+      var doc_width = $(window).width();
+      if ($note_body.offset().left + $note_body.width() > doc_width) {
+        $note_body.css({
+          // 30 is a magic number to factor in width of the scroll bar
+          left: $note_body.position().left - 30 - ($note_body.offset().left + $note_body.width() - doc_width)
+        });
+      }
     },
     
     show: function(id) {
@@ -93,8 +104,8 @@ Note = {
       Note.Body.hide_all();
       Note.clear_timeouts();
       var $note_body = $("#note-container div.note-body[data-id=" + id + "]");
-      Note.Body.initialize($note_body);
       $note_body.show();
+      Note.Body.initialize($note_body);
     },
     
     hide: function(id) {
@@ -111,32 +122,26 @@ Note = {
       var h = $note_body.height();
       var golden_ratio = 1.6180339887;
 
-      if (h <= 20) {
-        // don't bother resizing one liners
-        return;
-      }
-
       while (w / h < golden_ratio) {
-        w = w * 1.05;
-        h = h / 1.05;
-        console.log("width=%d height=%d ratio=%f", w, h, w/h);
+        w = w * 1.025;
+        h = h / 1.025;
       }
-
+      
       while (w / h > golden_ratio) {
-        w = w / 1.05;
-        h = h * 1.05;
-        console.log("width=%d height=%d ratio=%f", w, h, w/h);
+        w = w / 1.025;
+        h = h * 1.025;
       }
 
       $note_body.css({
         width: w,
-        height: h
+        height: "auto"
       });
     },
     
     set_text: function($note_body, text) {
       $note_body.html(text);
       Note.Body.resize($note_body);
+      Note.Body.bound_position($note_body);
     },
     
     bind_events: function($note_body) {
@@ -180,11 +185,12 @@ Note = {
         modal: true,
         width: 300,
         dialogClass: "note-edit-dialog",
+        title: "Edit note",
         buttons: {
-          "Save": $.noop,
-          "Cancel": Note.cancel,
-          "Delete": $.noop,
-          "History": $.noop
+          "Save": Note.Edit.save,
+          "Cancel": Note.Edit.cancel,
+          "Delete": Note.Edit.delete,
+          "History": Note.Edit.history
         }
       });
       $dialog.bind("dialogclose", function() {
@@ -194,6 +200,37 @@ Note = {
       });
       Note.editing = true;
     },
+    
+    save: function() {
+      var $this = $(this);
+      var $textarea = $this.find("textarea");
+      var id = $this.data("id");
+      var $note_body = $("#note-container .note-body[data-id=" + id + "]");
+      var text = $textarea.val();
+      Note.Body.set_text($note_body, text);
+      $this.dialog("close");
+      console.log("save %d", id);
+    },
+    
+    cancel: function() {
+      $(this).dialog("close");
+    },
+    
+    delete: function() {
+      var $this = $(this);
+      var id = $this.data("id");
+      console.log("delete %d", id);
+      $("#note-container .note-box[data-id=" + id + "]").remove();
+      $("#note-container .note-body[data-id=" + id + "]").remove();
+      $(this).dialog("close");
+    },
+    
+    history: function() {
+      var $this = $(this);
+      var id = $this.data("id");
+      console.log("history %d", id);
+      $(this).dialog("close");
+    }
   },
   
   id: "x",
@@ -234,17 +271,14 @@ Note = {
     });
     
     Note.timeouts = [];
-  },
-  
-  cancel: function() {
-    $(this).dialog("close");
   }
 }
 
 $(document).ready(function() {
   $("#translate-button").click(function() {
     if (Note.id === "x") {
-      Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum");
+      // Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum");
+      Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
     } else {
       Note.add(Note.id, 20, 20, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
     }
