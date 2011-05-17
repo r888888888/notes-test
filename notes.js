@@ -244,6 +244,25 @@ Note = {
     }
   },
   
+  TranslationMode: {
+    start: function() {
+      $("#note-container").click(Note.TranslationMode.create_note);
+      $("#translate-button").one("click", Note.TranslationMode.stop).html("Click on image");
+    },
+    
+    stop: function() {
+      $("#note-container").unbind("click");
+      $("#translate-button").one("click", Note.TranslationMode.start).html("Translate");
+    },
+    
+    create_note: function(e) {
+      console.log("x=%d y=%d", e.pageX, e.pageY);
+      var offset = $("#image").offset();
+      Note.new(e.pageX - offset.left, e.pageY - offset.top);
+      Note.TranslationMode.stop();
+    }
+  },
+  
   id: "x",
   dragging: false,
   editing: false,
@@ -267,9 +286,13 @@ Note = {
     Note.Body.set_text($note_body, text);
   },
   
-  new: function() {
+  new: function(x, y) {
     var $note_box = Note.Box.create(Note.id);
     var $note_body = Note.Body.create(Note.id);
+    $note_box.offset({
+      top: y,
+      left: x
+    });
     $note_box.find(".note-box-inner-border").addClass("unsaved");
     $note_body.html("<em>Click to edit</em>");
     $("div#note-container").append($note_box);
@@ -284,13 +307,19 @@ Note = {
     });
     
     Note.timeouts = [];
+  },
+  
+  insert_position: function() {
+    var pos = {};
+    pos.top = $(window).scrollTop() + 50;
+    pos.left = $(window).scrollLeft() + 50;
+    return pos;
   }
 }
 
 $(document).ready(function() {
-  $("#translate-button").click(function() {
-    Note.new();
-  });
+  $("#translate-button").one("click", Note.TranslationMode.start);
   $("#note-container").width($("#image").width());
   $("#note-container").height($("#image").height());
+  $(document).bind("keydown", "ctrl+n", Note.TranslationMode.start);
 });
