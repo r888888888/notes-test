@@ -1,11 +1,11 @@
 Note = {
   Box: {
     create: function(id) {
-      var $inner_border = $('<div></div>');
+      var $inner_border = $('<div/>');
       $inner_border.addClass("note-box-inner-border");
       $inner_border.css({opacity: 0.7});
 
-      var $note_box = $('<div></div>');
+      var $note_box = $('<div/>');
       $note_box.addClass("note-box");
       $note_box.data("id", id);
       $note_box.attr("data-id", id);
@@ -69,6 +69,26 @@ Note = {
         height: $note_box.height() - 2, 
         width: $note_box.width() - 2
       });
+    },
+    
+    scale: function($note_box) {
+      var $image = $("#image");
+      var original_width = parseFloat($image.data("width"));
+      var original_height = parseFloat($image.data("height"));
+      var ratio = $image.width() / original_width;
+      
+      if (ratio < 1) {
+        var scaled_width = original_width * ratio;
+        var scaled_height = original_height * ratio;
+        var scaled_top = $note_box.offset().top * ratio;
+        var scaled_left = $note_box.offset().left * ratio;
+        $note_box.css({
+          top: scaled_top,
+          left: scaled_left,
+          width: scaled_width,
+          height: scaled_height
+        });
+      }
     }
   },
   
@@ -256,7 +276,6 @@ Note = {
     },
     
     create_note: function(e) {
-      console.log("x=%d y=%d", e.pageX, e.pageY);
       var offset = $("#image").offset();
       Note.new(e.pageX - offset.left, e.pageY - offset.top);
       Note.TranslationMode.stop();
@@ -282,6 +301,7 @@ Note = {
     
     $("div#note-container").append($note_box);
     $("div#note-container").append($note_body);
+    Note.Box.scale($note_box);
     Note.Box.resize_inner_border($note_box);
     Note.Body.set_text($note_body, text);
   },
@@ -307,13 +327,6 @@ Note = {
     });
     
     Note.timeouts = [];
-  },
-  
-  insert_position: function() {
-    var pos = {};
-    pos.top = $(window).scrollTop() + 50;
-    pos.left = $(window).scrollLeft() + 50;
-    return pos;
   }
 }
 
